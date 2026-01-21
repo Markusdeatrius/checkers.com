@@ -1,0 +1,28 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-ts"
+}
+
+model User {
+  id          String    @id @default(uuid())
+  username    String    @unique
+  email       String    @unique
+  password    String
+  rating      Int       @default(1200)
+  wins        Int       @default(0)
+  losses      Int       @default(0)
+  createdAt   DateTime  @default(now())
+}
+
+model Match {
+  id          String    @id @default(uuid())
+  player1Id   String
+  player2Id   String
+  result      String
+  playedAt    DateTime  @default(now())
+
+}

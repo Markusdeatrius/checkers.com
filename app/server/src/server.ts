@@ -1,12 +1,25 @@
-import http from "http";
-import { Server } from "socket.io";
-import app from "./app";
-//import { gameSocket } from "./sockets/gameSocket";
+import express from "express"
+import cors from "cors"
+import helmet from "helmet"
 
-const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+import { env } from "./libs/env"
 
-//io.on("connection", (socket) => gameSocket(io, socket));
+import health from "./api/health"
+import pub from "./api/public"
+import auth from "./api/auth"
+import admin from "./api/admin"
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const app = express()
+
+app.use(helmet())
+app.use(cors())
+app.use(express.json())
+
+app.use(health)
+app.use("/", pub)
+app.use("/auth", auth)
+app.use("/", admin)
+
+app.listen(env.PORT, () => {
+	console.log(`API running on :${env.PORT}`)
+})

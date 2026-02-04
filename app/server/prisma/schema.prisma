@@ -1,28 +1,97 @@
-datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+generator client {
+  provider = "prisma-client-js"
 }
 
-generator client {
-  provider = "prisma-client-ts"
+datasource db {
+  provider = "postgresql"
+}
+
+enum GameStatus {
+  WAITING
+  ACTIVE
+  FINISHED
+}
+
+enum PlayerColor {
+  WHITE
+  BLACK
 }
 
 model User {
-  id          String    @id @default(uuid())
-  username    String    @unique
-  email       String    @unique
-  password    String
-  rating      Int       @default(1200)
-  wins        Int       @default(0)
-  losses      Int       @default(0)
-  createdAt   DateTime  @default(now())
+  id           String        @id @default(uuid())
+  email        String        @unique
+  username     String        @unique
+  passwordHash String
+  rating       Int           @default(1200)
+
+  stats        UserStats?
+  games        GamePlayer[]
+  moves        Move[]
+
+  wonGames     Game[]        @relation("GameWinner")
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
-model Match {
-  id          String    @id @default(uuid())
-  player1Id   String
-  player2Id   String
-  result      String
-  playedAt    DateTime  @default(now())
 
+model UserStats {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+
+  wins         Int      @default(0)
+  losses       Int      @default(0)
+  draws        Int      @default(0)
+  gamesPlayed  Int      @default(0)
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Game {
+  id            String        @id @default(uuid())
+  status        GameStatus
+  createdAt     DateTime      @default(now())
+  startedAt     DateTime?
+  finishedAt    DateTime?
+
+  winnerId      String?
+  winner        User?         @relation("GameWinner", fields: [winnerId], references: [id])
+
+  initialState  Json
+  finalState    Json?
+
+  players       GamePlayer[]
+  moves         Move[]
+}
+
+
+model GamePlayer {
+  id        String       @id @default(uuid())
+  gameId   String
+  userId   String
+  color    PlayerColor
+
+  joinedAt DateTime     @default(now())
+
+  game     Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, color])
+  @@unique([gameId, userId])
+}
+
+model Move {
+  id        String    @id @default(uuid())
+  gameId   String
+  playerId String
+
+  moveIndex Int
+  moveData  Json
+
+  createdAt DateTime  @default(now())
+
+  game      Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  player    User      @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, moveIndex])
 }

@@ -1,58 +1,30 @@
-import { PrismaClient } from "@prisma/client"
-import bcrypt from "bcrypt"
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function main() {
-  await prisma.move.deleteMany()
-  await prisma.gamePlayer.deleteMany()
-  await prisma.game.deleteMany()
-  await prisma.userStats.deleteMany()
-  await prisma.user.deleteMany()
-
-  const password = await bcrypt.hash("password123", 10)
-
-  const users = await prisma.user.createMany({
+  // Uživatele
+  await prisma.user.createMany({
     data: [
-      {
-        email: "alice@example.com",
-        username: "alice",
-        passwordHash: password,
-        rating: 1200,
-      },
-      {
-        email: "bob@example.com",
-        username: "bob",
-        passwordHash: password,
-        rating: 1200,
-      },
-      {
-        email: "charlie@example.com",
-        username: "charlie",
-        passwordHash: password,
-        rating: 1200,
-      },
+      { name: 'Alice', email: 'alice@example.com', password: 'password123' },
+      { name: 'Bob', email: 'bob@example.com', password: 'password123' },
     ],
-  })
+  });
 
-  const allUsers = await prisma.user.findMany()
-
-  await prisma.userStats.createMany({
-    data: allUsers.map((u: { id: any }) => ({
-      userId: u.id,
-      wins: 0,
-      losses: 0,
-      draws: 0,
-      gamesPlayed: 0,
-    })),
-  })
+  // Hry bez relation pole
+  await prisma.game.create({
+    data: {
+      name: 'Test Game 1',
+      status: 'WAITING',
+    },
+  });
 }
 
 main()
   .catch((e) => {
-    console.error(e)
-    process.exit(1)
+    console.error(e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });

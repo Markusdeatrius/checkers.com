@@ -1,25 +1,30 @@
-import express from "express"
-import cors from "cors"
-import helmet from "helmet"
+import { PrismaClient } from "@prisma/client"
+import app from "./app"
 
-import { env } from "./libs/env"
+const prisma = new PrismaClient()
 
-import health from "./api/health"
-import pub from "./api/public"
-import auth from "./api/auth"
-import admin from "./api/admin"
 
-const app = express()
+app.get("/users", async (req, res) => {
+  const users = await prisma.user.findMany()
+  res.json(users)
+})
 
-app.use(helmet())
-app.use(cors())
-app.use(express.json())
+app.post("/users", async (req, res) => {
+  const { email, name, password } = req.body
 
-app.use(health)
-app.use("/", pub)
-app.use("/auth", auth)
-app.use("/", admin)
+  const user = await prisma.user.create({
+    data: {
+      email,
+      name,
+      password
+    }
+  })
 
-app.listen(env.PORT, () => {
-	console.log(`API running on :${env.PORT}`)
+  res.json(user)
+})
+
+const port = 3000
+
+app.listen(port, () => {
+  console.log(`server running on port ${port}`)
 })

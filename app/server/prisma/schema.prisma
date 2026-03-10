@@ -4,94 +4,29 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-}
-
-enum GameStatus {
-  WAITING
-  ACTIVE
-  FINISHED
-}
-
-enum PlayerColor {
-  WHITE
-  BLACK
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id           String        @id @default(uuid())
-  email        String        @unique
-  username     String        @unique
-  passwordHash String
-  rating       Int           @default(1200)
-
-  stats        UserStats?
-  games        GamePlayer[]
-  moves        Move[]
-
-  wonGames     Game[]        @relation("GameWinner")
-
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-}
-
-
-model UserStats {
-  id           String   @id @default(uuid())
-  userId       String   @unique
-
-  wins         Int      @default(0)
-  losses       Int      @default(0)
-  draws        Int      @default(0)
-  gamesPlayed  Int      @default(0)
-
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       Int          @id @default(autoincrement())
+  name     String
+  email    String       @unique
+  password String
+  games    GamePlayer[]
 }
 
 model Game {
-  id            String        @id @default(uuid())
-  status        GameStatus
-  createdAt     DateTime      @default(now())
-  startedAt     DateTime?
-  finishedAt    DateTime?
-
-  winnerId      String?
-  winner        User?         @relation("GameWinner", fields: [winnerId], references: [id])
-
-  initialState  Json
-  finalState    Json?
-
-  players       GamePlayer[]
-  moves         Move[]
+  id       Int          @id @default(autoincrement())
+  name     String
+  status   String
+  players  GamePlayer[]
 }
-
 
 model GamePlayer {
-  id        String       @id @default(uuid())
-  gameId   String
-  userId   String
-  color    PlayerColor
-
-  joinedAt DateTime     @default(now())
-
-  game     Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([gameId, color])
-  @@unique([gameId, userId])
-}
-
-model Move {
-  id        String    @id @default(uuid())
-  gameId   String
-  playerId String
-
-  moveIndex Int
-  moveData  Json
-
-  createdAt DateTime  @default(now())
-
-  game      Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  player    User      @relation(fields: [playerId], references: [id], onDelete: Cascade)
-
-  @@unique([gameId, moveIndex])
+  id      Int   @id @default(autoincrement())
+  userId  Int
+  gameId  Int
+  user    User  @relation(fields: [userId], references: [id])
+  game    Game  @relation(fields: [gameId], references: [id])
+  @@unique([userId, gameId])
 }

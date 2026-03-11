@@ -1,11 +1,12 @@
 import { Router } from "express"
-import { createGame, joinGame, getGames } from "../controllers/gameController"
+import { createGame, joinGame, getGames, startGame } from "../controllers/gameController"
 import { authMiddleware } from "../middleware/authMiddleware"
 
 const router = Router()
 
+router.get("/", getGames)
 router.post("/", authMiddleware, createGame)
-router.get("/", authMiddleware, getGames)
 router.post("/:gameId/join", authMiddleware, joinGame)
+router.post("/:gameId/start", authMiddleware, startGame)  // ← tady startGame
 
 export default router

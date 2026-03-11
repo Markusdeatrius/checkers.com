@@ -18,11 +18,16 @@ export const authMiddleware = async (
 		return res.status(401).json({ error: "Invalid token format" })
 	}
 
-	try {
-		const payload = await verifyJWT(token)
-		;(req as any).user = payload
-		next()
-	} catch {
-		return res.status(401).json({ error: "Invalid token" })
-	}
+    try {
+    const payload = await verifyJWT(token)
+
+    if (!payload || typeof payload.userId !== "number") {
+        return res.status(401).json({ error: "Invalid token payload" })
+    }
+
+    (req as any).user = payload
+    next()
+    } catch {
+    return res.status(401).json({ error: "Invalid token" })
+    }
 }

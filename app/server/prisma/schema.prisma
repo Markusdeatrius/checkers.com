@@ -19,6 +19,8 @@ model Game {
   id       Int          @id @default(autoincrement())
   name     String
   status   String
+  turn     Int?
+  board    Json?
   players  GamePlayer[]
 }
 
@@ -28,5 +30,6 @@ model GamePlayer {
   gameId  Int
   user    User  @relation(fields: [userId], references: [id])
   game    Game  @relation(fields: [gameId], references: [id])
-  @@unique([userId, gameId])
+
+  @@unique([userId, gameId], name: "user_game_unique")
 }

@@ -7,6 +7,6 @@ const router = Router()
 router.get("/", getGames)
 router.post("/", authMiddleware, createGame)
 router.post("/:gameId/join", authMiddleware, joinGame)
-router.post("/:gameId/start", authMiddleware, startGame)  // ← tady startGame
+router.post("/:gameId/start", authMiddleware, startGame)
 
 export default router

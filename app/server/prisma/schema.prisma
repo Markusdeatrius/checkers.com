@@ -16,12 +16,15 @@ model User {
 }
 
 model Game {
-  id       Int          @id @default(autoincrement())
-  name     String
-  status   String
-  turn     Int?
-  board    Json?
-  players  GamePlayer[]
+  id        Int          @id @default(autoincrement())
+  name      String
+  status    String       @default("WAITING")
+  turn      Int?
+  board     Json?
+  winnerId  Int?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @default(now()) @updatedAt
+  players   GamePlayer[]
 }
 
 model GamePlayer {

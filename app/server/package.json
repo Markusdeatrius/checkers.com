@@ -37,7 +37,8 @@
     "openssl": "^2.0.0",
     "postgres": "^3.4.8",
     "prisma": "^6.19.2",
-    "socket.io": "^4.8.1",
+    "socket.io": "^4.8.3",
+    "socketio": "^1.0.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {

@@ -48,7 +48,8 @@ export const login = async (req: Request, res: Response) => {
     const token = await signJWT({ userId: user.id })
 
     res.json({ token })
-  } catch {
+  } catch (error) {
+    console.error("Login error:", error)
     res.status(500).json({ error: "Internal server error" })
   }
 }

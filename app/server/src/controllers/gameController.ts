@@ -6,7 +6,7 @@ export const createGame = async (req: Request, res: Response) => {
   const { name } = req.body
 
   const game = await prisma.game.create({
-    data: { name, status: "WAITING" },
+    data: { name: name || 'Game', status: "WAITING" },
   })
 
   res.json(game)
@@ -14,10 +14,10 @@ export const createGame = async (req: Request, res: Response) => {
 
 export const joinGame = async (req: Request, res: Response) => {
   const { gameId } = req.params
-  const userId = (req.user as any)?.userId
+  const userId = req.body.userId
 
   if (!userId) {
-    return res.status(401).json({ error: "Unauthorized" })
+    return res.status(400).json({ error: "userId required" })
   }
 
     const players = await prisma.gamePlayer.count({

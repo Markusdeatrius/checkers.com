@@ -11,7 +11,7 @@ const io = new Server(httpServer, {
 
 setupGameSocket(io);
 
-const port = 3000;
+const port = 3002;
 httpServer.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

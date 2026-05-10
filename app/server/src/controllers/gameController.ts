@@ -20,13 +20,18 @@ export const joinGame = async (req: Request, res: Response) => {
     return res.status(400).json({ error: "userId required" })
   }
 
-    const players = await prisma.gamePlayer.count({
-        where: { gameId: Number(gameId) }
-    })
+  const game = await prisma.game.findUnique({
+    where: { id: Number(gameId) },
+    include: { players: true },
+  })
 
-    if (players >= 2) {
+  if (!game) {
+    return res.status(404).json({ error: "Game not found" })
+  }
+
+  if (game.players.length >= 2) {
     return res.status(400).json({ error: "Game full" })
-    }
+  }
 
   const existing = await prisma.gamePlayer.findFirst({
     where: {
@@ -46,7 +51,22 @@ export const joinGame = async (req: Request, res: Response) => {
     },
   })
 
-  res.json(player)
+  let updatedGame = game
+
+  if (game.players.length + 1 === 2 && game.status === "WAITING") {
+    const board = createInitialBoard()
+    updatedGame = await prisma.game.update({
+      where: { id: Number(gameId) },
+      data: {
+        status: "PLAYING",
+        board,
+        turn: 1, // Use player slot 1 / 2 instead of actual DB userId
+      },
+      include: { players: true },
+    })
+  }
+
+  res.json({ player, game: updatedGame })
 }
 
 export const getGames = async (_req: Request, res: Response) => {
@@ -80,7 +100,8 @@ export const startGame = async (req: Request, res: Response) => {
   }
 
   const players = await prisma.gamePlayer.findMany({
-    where: { gameId: Number(gameId) }
+    where: { gameId: Number(gameId) },
+    orderBy: { id: 'asc' }
   })
 
   if (players.length !== 2) {
@@ -94,8 +115,9 @@ export const startGame = async (req: Request, res: Response) => {
     data: {
       status: "PLAYING",
       board,
-      turn: players[0].userId
-    }
+      turn: 1
+    },
+    include: { players: true },
   })
 
   res.json(updated)

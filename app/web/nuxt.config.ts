@@ -2,9 +2,14 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  nitro: {
-    devProxy: {
-      '/api': 'http://localhost:3002'
+  vite: {
+    server: {
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3002',
+          changeOrigin: true
+        }
+      }
     }
   }
 })

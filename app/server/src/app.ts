@@ -5,8 +5,10 @@ import gameRoutes from './routes/game';
 import userRoutes from './routes/user';
 
 const app = express();
-app.use(cors());
 app.use(express.json());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001'],
+}));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/games', gameRoutes);

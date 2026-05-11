@@ -18,6 +18,7 @@
           <h2>Players</h2>
           <div v-for="player in players" :key="player.userId" class="player-row">
             <div class="player-name">{{ player.name }} <span>({{ player.color }})</span></div>
+            <div class="player-elo">Elo: <strong>{{ player.eloRating }}</strong></div>
             <div class="player-stats">{{ player.stats.wins }}W / {{ player.stats.losses }}L / {{ player.stats.draws }}D</div>
           </div>
         </div>
@@ -89,7 +90,7 @@ const currentTurn = ref<number>(1)
 const winner = ref<number | null>(null)
 const playerSlot = ref<number | null>(null)
 const playerClocks = ref<Record<number, number>>({ 1: 0, 2: 0 })
-const players = ref<Array<{ slot: number; userId: number; name: string; color: 'white' | 'black'; stats: { wins: number; losses: number; draws: number } }>>([])
+const players = ref<Array<{ slot: number; userId: number; name: string; color: 'white' | 'black'; eloRating: number; stats: { wins: number; losses: number; draws: number } }>>([])
 const chatInput = ref('')
 const chatMessages = ref<Array<{ userId: number; userName: string; text: string; createdAt: string }>>([])
 const gameStatus = ref<string>('waiting')
@@ -409,6 +410,7 @@ const sendChat = () => {
 }
 
 .status-card,
+.players-card,
 .chat-card {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -416,6 +418,36 @@ const sendChat = () => {
   padding: 16px;
   flex: 1;
   min-width: 280px;
+}
+
+.player-row {
+  padding: 12px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.player-name {
+  font-weight: 700;
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+}
+
+.player-name span {
+  font-weight: 400;
+  color: #6b7280;
+}
+
+.player-elo {
+  font-size: 0.9rem;
+  color: #4b5563;
+  margin-bottom: 4px;
+}
+
+.player-stats {
+  font-size: 0.9rem;
+  color: #6b7280;
 }
 
 .timer-row {

@@ -1,5 +1,6 @@
 import { Server } from "socket.io";
 import prisma from "../libs/prisma";
+import { calculateElo } from "../utils/elo";
 import {
   validateMove,
   applyMove,
@@ -121,6 +122,7 @@ const buildGameState = async (game: any) => {
       userId: player.userId,
       name: player.user.name,
       color: index === 0 ? "white" : "black",
+      eloRating: player.user.eloRating,
       stats: await getPlayerStats(player.userId),
     }))
   );
@@ -144,6 +146,56 @@ const buildGameState = async (game: any) => {
   };
 };
 
+const finalizeMatchElo = async (players: any[], winnerSlot: number) => {
+  if (players.length < 2) return;
+
+  const player1 = players[0].user;
+  const player2 = players[1].user;
+  if (!player1 || !player2) return;
+
+  const actualScore1 = winnerSlot === 1 ? 1 : 0;
+  const actualScore2 = winnerSlot === 1 ? 0 : 1;
+
+  const newRating1 = calculateElo(
+    player1.eloRating || 1200,
+    player2.eloRating || 1200,
+    actualScore1,
+    player1.gamesPlayed || 0
+  );
+  const newRating2 = calculateElo(
+    player2.eloRating || 1200,
+    player1.eloRating || 1200,
+    actualScore2,
+    player2.gamesPlayed || 0
+  );
+
+  const eloChange1 = newRating1 - (player1.eloRating || 1200);
+  const eloChange2 = newRating2 - (player2.eloRating || 1200);
+
+  await prisma.$transaction(async (tx: any) => {
+    await Promise.all([
+      tx.user.update({
+        where: { id: player1.id },
+        data: { eloRating: newRating1, gamesPlayed: { increment: 1 } },
+      }),
+      tx.user.update({
+        where: { id: player2.id },
+        data: { eloRating: newRating2, gamesPlayed: { increment: 1 } },
+      }),
+    ]);
+
+    await tx.match.create({
+      data: {
+        player1Id: player1.id,
+        player2Id: player2.id,
+        isDraw: false,
+        eloChangePlayer1: eloChange1,
+        eloChangePlayer2: eloChange2,
+      },
+    });
+  });
+};
+
 const endGameByTimeout = async (gameId: number, winnerSlot: number, io: Server) => {
   const players = await prisma.gamePlayer.findMany({
     where: { gameId },
@@ -162,6 +214,7 @@ const endGameByTimeout = async (gameId: number, winnerSlot: number, io: Server) 
     include: { players: { include: { user: true } } },
   });
 
+  await finalizeMatchElo(players, winnerSlot);
   io.to(`game_${gameId}`).emit("gameFinished", winnerSlot);
   io.to(`game_${gameId}`).emit("gameState", await buildGameState(updatedGame));
 };
@@ -288,6 +341,7 @@ export const setupGameSocket = (io: Server) => {
       });
 
       if (isFinished) {
+        await finalizeMatchElo(players, slot);
         stopTimer(gameId);
         io.to(`game_${gameId}`).emit("gameFinished", slot);
       }

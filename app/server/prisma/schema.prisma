@@ -8,43 +8,43 @@ datasource db {
 }
 
 model User {
-  id           Int          @id @default(autoincrement())
-  name         String
-  email        String       @unique
-  password     String
-  eloRating    Int          @default(1200)
-  gamesPlayed  Int          @default(0)
-  games        GamePlayer[]
-  winsAsPlayer1 Match[]   @relation("Player1")
-  winsAsPlayer2 Match[]   @relation("Player2")
+  id            String       @id @default(uuid())
+  name          String
+  email         String       @unique
+  password      String
+  eloRating     Int          @default(1200)
+  gamesPlayed   Int          @default(0)
+  games         GamePlayer[]
+  winsAsPlayer1 Match[]      @relation("Player1")
+  winsAsPlayer2 Match[]      @relation("Player2")
 }
 
 model Game {
-  id        Int          @id @default(autoincrement())
+  id        String       @id @default(uuid()) 
   name      String
   status    String       @default("WAITING")
   turn      Int?
   board     Json?
-  winnerId  Int?
+  winnerId  String?      
   createdAt DateTime     @default(now())
   updatedAt DateTime     @default(now()) @updatedAt
   players   GamePlayer[]
 }
 
 model GamePlayer {
-  id      Int   @id @default(autoincrement())
-  userId  Int
-  gameId  Int
-  user    User  @relation(fields: [userId], references: [id])
-  game    Game  @relation(fields: [gameId], references: [id])
+  id      String @id @default(uuid())
+  userId  String 
+  gameId  String 
+  user    User   @relation(fields: [userId], references: [id])
+  game    Game   @relation(fields: [gameId], references: [id])
 
   @@unique([userId, gameId], name: "user_game_unique")
 }
 
 model Match {
-  id               Int      @id @default(autoincrement())
-  player1Id        Int
-  player2Id        Int
+  id               String   @id @default(uuid())
+  player1Id        String
+  player2Id        String
   isDraw           Boolean
   eloChangePlayer1 Int
   eloChangePlayer2 Int

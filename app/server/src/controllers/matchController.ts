@@ -2,10 +2,13 @@ import { Request, Response } from "express";
 import prisma from "../libs/prisma";
 import { calculateElo } from "../utils/elo";
 
+const isValidId = (value: unknown): value is string =>
+  typeof value === "string" && value.trim().length > 0;
+
 export const recordMatchResult = async (req: Request, res: Response) => {
   const { player1Id, player2Id, result } = req.body;
 
-  if (!Number.isInteger(player1Id) || !Number.isInteger(player2Id) || !result) {
+  if (!isValidId(player1Id) || !isValidId(player2Id) || !result) {
     return res.status(400).json({ error: "Invalid input" });
   }
 

@@ -21,7 +21,7 @@ export const authMiddleware = async (
     try {
     const payload = await verifyJWT(token)
 
-    if (!payload || typeof payload.userId !== "number") {
+    if (!payload || typeof payload.userId !== "string") {
         return res.status(401).json({ error: "Invalid token payload" })
     }
 

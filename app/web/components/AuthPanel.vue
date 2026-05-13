@@ -1,11 +1,11 @@
 <template>
-  <section class="panel">
+  <section class="panel animate-fade">
     <div class="panel-header">
       <div>
-        <p class="eyebrow">Account</p>
-        <h2>{{ authMode === 'login' ? 'Login to your account' : 'Create a new account' }}</h2>
+        <p class="status-badge">● Zabezpečené připojení</p>
+        <h2>{{ authMode === 'login' ? 'Přihlášení' : 'Nová registrace' }}</h2>
       </div>
-      <button class="link-btn" type="button" @click="$emit('back')">Back</button>
+      <button class="btn-text" type="button" @click="$emit('back')">Zpět do lobby</button>
     </div>
 
     <div class="tabs">
@@ -14,40 +14,88 @@
         type="button"
         @click="$emit('change-mode', 'login')"
       >
-        Login
+        Přihlásit se
       </button>
       <button
         :class="['tab', { active: authMode === 'register' }]"
         type="button"
         @click="$emit('change-mode', 'register')"
       >
-        Register
+        Vytvořit účet
       </button>
     </div>
 
     <form @submit.prevent="submitAuth" class="auth-form">
+      <!-- JMÉNO (pouze registrace) -->
       <template v-if="authMode === 'register'">
-        <label>
-          Name
-          <input v-model="form.name" type="text" placeholder="Your name" required />
-        </label>
+        <div class="input-group">
+          <label>Uživatelské jméno</label>
+          <input v-model="form.name" type="text" placeholder="Např. NabrVan" required />
+        </div>
       </template>
-      <label>
-        Email
-        <input v-model="form.email" type="email" placeholder="you@example.com" required />
-      </label>
-      <label>
-        Password
-        <input v-model="form.password" type="password" placeholder="••••••••" required minlength="6" />
-      </label>
-      <button class="btn btn-primary" type="submit">{{ authMode === 'login' ? 'Login' : 'Register' }}</button>
-      <p class="message" v-if="authMessage">{{ authMessage }}</p>
-      <p class="error" v-if="authError">{{ authError }}</p>
+
+      <!-- EMAIL -->
+      <div class="input-group">
+        <label>E-mail</label>
+        <input v-model="form.email" type="email" placeholder="vas@email.cz" required />
+      </div>
+
+      <!-- HESLO -->
+      <div class="input-group">
+        <label>Heslo</label>
+        <div class="password-wrapper">
+          <input 
+            v-model="form.password" 
+            :type="showPassword ? 'text' : 'password'" 
+            placeholder="••••••••" 
+            required 
+            minlength="6" 
+          />
+          <button type="button" class="eye-btn" @click="showPassword = !showPassword">
+            <span v-if="showPassword">👁️‍🗨️</span>
+            <span v-else>👁️</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- POTVRZENÍ HESLA (pouze registrace) -->
+      <template v-if="authMode === 'register'">
+        <div class="input-group">
+          <label>Potvrzení hesla</label>
+          <div class="password-wrapper">
+            <input 
+              v-model="form.confirmPassword" 
+              :type="showPassword ? 'text' : 'password'" 
+              placeholder="••••••••" 
+              required 
+              :class="{ 'input-error': !passwordsMatch && form.confirmPassword }"
+            />
+          </div>
+          <p v-if="!passwordsMatch && form.confirmPassword" class="error-text">
+            Hesla se neshodují!
+          </p>
+        </div>
+      </template>
+
+      <!-- TLAČÍTKO -->
+      <button 
+        class="btn-main" 
+        type="submit" 
+        :disabled="authMode === 'register' && !passwordsMatch"
+      >
+        {{ authMode === 'login' ? 'Vstoupit do arény' : 'Zaregistrovat se' }}
+      </button>
+
+      <!-- ZPRÁVY -->
+      <p class="message-success" v-if="authMessage">{{ authMessage }}</p>
+      <p class="message-error" v-if="authError || localError">{{ authError || localError }}</p>
     </form>
   </section>
 </template>
 
 <script setup lang="ts">
+import { reactive, ref, computed } from 'vue'
+
 const { authMode, authMessage, authError } = defineProps<{
   authMode: 'login' | 'register'
   authMessage: string
@@ -64,9 +112,26 @@ const form = reactive({
   name: '',
   email: '',
   password: '',
+  confirmPassword: ''
+})
+
+const showPassword = ref(false)
+const localError = ref('')
+
+// Validace shody hesel
+const passwordsMatch = computed(() => {
+  if (authMode === 'login') return true
+  return form.password === form.confirmPassword
 })
 
 const submitAuth = () => {
+  localError.value = ''
+  
+  if (authMode === 'register' && !passwordsMatch.value) {
+    localError.value = 'Hesla musí být identická.'
+    return
+  }
+
   emit('submit', {
     authMode,
     name: form.name,
@@ -78,89 +143,187 @@ const submitAuth = () => {
 
 <style scoped>
 .panel {
-  background: white;
-  border-radius: 24px;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
-  padding: 28px;
+  background: #262522; /* Sladěno s lobby */
+  border: 1px solid #312e2b;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 460px;
+  margin: 0 auto;
 }
 
 .panel-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
+  align-items: flex-start;
+  margin-bottom: 30px;
+}
+
+.status-badge {
+  color: #81b64c;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: block;
+}
+
+h2 {
+  color: #fff;
+  font-size: 1.8rem;
+  margin: 0;
 }
 
 .tabs {
   display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
+  background: #1b1917;
+  padding: 4px;
+  border-radius: 8px;
+  margin-bottom: 24px;
 }
 
 .tab {
-  border: 1px solid #cbd5e1;
-  background: #f8fafc;
-  color: #0f172a;
-  padding: 12px 18px;
-  border-radius: 999px;
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #989795;
+  padding: 10px;
+  border-radius: 6px;
   cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
 }
 
 .tab.active {
-  background: #2563eb;
-  color: white;
-  border-color: transparent;
+  background: #312e2b;
+  color: #fff;
 }
 
 .auth-form {
-  display: grid;
-  gap: 16px;
-  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.auth-form label {
-  display: grid;
+.input-group {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  font-size: 0.95rem;
-  color: #334155;
 }
 
-.auth-form input {
-  border: 1px solid #cbd5e1;
-  border-radius: 14px;
-  padding: 14px 16px;
+.input-group label {
+  font-size: 0.9rem;
+  color: #bab9b7;
+  font-weight: 600;
+}
+
+.input-group input {
+  background: #1b1917;
+  border: 1px solid #312e2b;
+  border-radius: 6px;
+  padding: 12px 16px;
+  color: #fff;
   font-size: 1rem;
+  outline: none;
 }
 
-.btn {
-  border: none;
-  border-radius: 999px;
-  padding: 14px 24px;
-  font-weight: 600;
-  cursor: pointer;
+.input-group input:focus {
+  border-color: #81b64c;
 }
 
-.btn-primary {
-  background: #2563eb;
-  color: white;
+.input-error {
+  border-color: #f87171 !important;
 }
 
-.link-btn {
+.password-wrapper {
+  position: relative;
+  display: flex;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 45px;
+}
+
+.eye-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   background: none;
-  color: #2563eb;
   border: none;
-  font-weight: 600;
   cursor: pointer;
+  font-size: 1.2rem;
+  opacity: 0.6;
+  transition: opacity 0.2s;
 }
 
-.error {
-  color: #dc2626;
-  margin-top: 8px;
+.eye-btn:hover {
+  opacity: 1;
 }
 
-.message {
-  color: #0f766e;
-  margin-top: 8px;
+.btn-main {
+  background: #81b64c;
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #457520;
+  margin-top: 10px;
+  transition: transform 0.1s;
+}
+
+.btn-main:hover:not(:disabled) {
+  background: #95c95a;
+}
+
+.btn-main:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #457520;
+}
+
+.btn-main:disabled {
+  background: #312e2b;
+  box-shadow: none;
+  color: #555;
+  cursor: not-allowed;
+}
+
+.btn-text {
+  background: transparent;
+  color: #989795;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-text:hover {
+  color: #fff;
+}
+
+.error-text {
+  color: #f87171;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.message-success {
+  background: rgba(129, 182, 76, 0.1);
+  color: #81b64c;
+  padding: 12px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.message-error {
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  padding: 12px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.9rem;
 }
 </style>

@@ -1,26 +1,39 @@
 <template>
-  <section class="hero">
-    <div class="hero-copy">
-      <span class="eyebrow">Welcome to</span>
-      <h1>Checkers.com</h1>
-      <p>Fast matches, clean lobby, and easy one-click play. Sign in or choose a game to join, or start a new match instantly.</p>
-      <div class="hero-actions">
-        <button class="btn btn-primary" type="button" @click="$emit('open-auth')">Sign Up / Login</button>
-        <button class="btn btn-secondary" type="button" @click="$emit('open-play')">Play</button>
+  <section class="hero-container">
+    <div class="hero-content">
+      <div class="badge">Season 1</div>
+      <h1>Master the board, <br><span class="highlight">claim your rank.</span></h1>
+      <p>
+        Experience one of the best checkers arena. Join other players in real-time matches 
+        and climb the ranks.
+      </p>
+      
+      <div class="hero-btns">
+        <button class="btn-main" @click="$emit('open-auth')">
+          Start Playing Now
+        </button>
+        <button class="btn-alt" @click="$emit('open-play')">
+          View Open Lobby
+        </button>
       </div>
     </div>
-    <div class="hero-card">
-      <div class="stat">
-        <strong>2</strong>
-        <span>Players per game</span>
-      </div>
-      <div class="stat">
-        <strong>Quick</strong>
-        <span>Join created rooms instantly</span>
-      </div>
-      <div class="stat">
-        <strong>Simple</strong>
-        <span>Clear board, easy flow</span>
+
+    <div class="hero-visual">
+      <div class="feature-card">
+        <div class="feature-item">
+          <div class="icon">⚡</div>
+          <div class="text">
+            <strong>Instant Match</strong>
+            <span>Zero wait time pairing</span>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="icon">🏆</div>
+          <div class="text">
+            <strong>Elo System</strong>
+            <span>Track your progress</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -31,88 +44,163 @@ const emit = defineEmits(['open-auth', 'open-play'])
 </script>
 
 <style scoped>
-.hero {
+.hero-container {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(240px, 1fr);
-  gap: 32px;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 40px;
   align-items: center;
-  padding: 40px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  border-radius: 28px;
-  color: white;
+  padding: 60px 40px;
+  background: #21201d; /* Deep matte surface */
+  border-radius: 12px;
+  border: 1px solid #312e2b;
+  overflow: hidden;
+  position: relative;
 }
 
-.hero-copy .eyebrow {
-  letter-spacing: 0.2em;
+/* DECORATION */
+.hero-container::before {
+  content: "";
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(129, 182, 76, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* CONTENT LEFT */
+.badge {
+  display: inline-block;
+  padding: 6px 12px;
+  background: #312e2b;
+  color: #81b64c;
+  font-size: 0.75rem;
+  font-weight: 800;
   text-transform: uppercase;
-  opacity: 0.75;
-  font-size: 0.85rem;
+  letter-spacing: 1.5px;
+  border-radius: 4px;
+  margin-bottom: 24px;
 }
 
-.hero-copy h1 {
-  font-size: clamp(3rem, 4vw, 4.5rem);
-  margin: 16px 0;
-  line-height: 0.95;
+h1 {
+  font-size: clamp(2.5rem, 5vw, 3.8rem);
+  line-height: 1.1;
+  margin: 0 0 24px 0;
+  color: #ffffff;
+  font-weight: 800;
 }
 
-.hero-copy p {
-  max-width: 560px;
-  margin-bottom: 28px;
-  font-size: 1.05rem;
-  opacity: 0.9;
+.highlight {
+  color: #81b64c;
 }
 
-.hero-actions {
+p {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: #989795;
+  margin-bottom: 36px;
+  max-width: 500px;
+}
+
+/* BUTTONS (Tactile Style) */
+.hero-btns {
   display: flex;
-  flex-wrap: wrap;
   gap: 16px;
 }
 
-.hero-card {
-  display: grid;
-  gap: 18px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 24px;
-  padding: 26px;
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.stat strong {
-  font-size: 1.7rem;
-}
-
-.stat span {
-  opacity: 0.82;
-}
-
-.btn {
+.btn-main, .btn-alt {
+  padding: 16px 32px;
+  font-size: 1.1rem;
+  font-weight: 800;
   border: none;
-  border-radius: 999px;
-  padding: 14px 24px;
-  font-weight: 600;
+  border-radius: 8px;
   cursor: pointer;
+  transition: all 0.1s ease;
 }
 
-.btn-primary {
-  background: #2563eb;
+.btn-main {
+  background: #81b64c;
+  color: white;
+  box-shadow: 0 5px 0 #457520;
+}
+
+.btn-main:hover {
+  background: #95bb4a;
+}
+
+.btn-main:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #457520;
+}
+
+.btn-alt {
+  background: #312e2b;
+  color: #bababa;
+  box-shadow: 0 5px 0 #1b1917;
+}
+
+.btn-alt:hover {
+  background: #3d3a37;
   color: white;
 }
 
-.btn-secondary {
-  background: white;
-  color: #1e3a8a;
-  border: 1px solid #cbd5e1;
+.btn-alt:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #1b1917;
 }
 
-@media (max-width: 840px) {
-  .hero {
+/* FEATURE CARD RIGHT */
+.feature-card {
+  background: #262522;
+  padding: 30px;
+  border-radius: 16px;
+  border: 1px solid #312e2b;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.icon {
+  font-size: 1.8rem;
+  background: #312e2b;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.text strong {
+  display: block;
+  font-size: 1rem;
+  color: #ffffff;
+  margin-bottom: 2px;
+}
+
+.text span {
+  font-size: 0.85rem;
+  color: #989795;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1000px) {
+  .hero-container {
     grid-template-columns: 1fr;
+    padding: 40px 30px;
+    text-align: center;
   }
+
+  p { margin: 0 auto 36px auto; }
+  .hero-btns { justify-content: center; }
+  .hero-visual { display: none; } /* Skryjeme na mobilu pro čistotu */
 }
 </style>

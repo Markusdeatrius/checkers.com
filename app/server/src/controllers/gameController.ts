@@ -13,15 +13,15 @@ export const createGame = async (req: Request, res: Response) => {
 }
 
 export const joinGame = async (req: Request, res: Response) => {
-  const { gameId } = req.params
+  const gameId = Array.isArray(req.params.gameId) ? req.params.gameId[0] : req.params.gameId
   const userId = req.body.userId
 
-  if (!userId) {
+  if (typeof userId !== "string" || userId.trim().length === 0) {
     return res.status(400).json({ error: "userId required" })
   }
 
   const game = await prisma.game.findUnique({
-    where: { id: Number(gameId) },
+    where: { id: gameId },
     include: { players: true },
   })
 
@@ -36,7 +36,7 @@ export const joinGame = async (req: Request, res: Response) => {
   const existing = await prisma.gamePlayer.findFirst({
     where: {
       userId,
-      gameId: Number(gameId),
+      gameId,
     },
   })
 
@@ -47,7 +47,7 @@ export const joinGame = async (req: Request, res: Response) => {
   const player = await prisma.gamePlayer.create({
     data: {
       userId,
-      gameId: Number(gameId),
+      gameId,
     },
   })
 
@@ -56,14 +56,24 @@ export const joinGame = async (req: Request, res: Response) => {
   if (game.players.length + 1 === 2 && game.status === "WAITING") {
     const board = createInitialBoard()
     updatedGame = await prisma.game.update({
-      where: { id: Number(gameId) },
+      where: { id: gameId },
       data: {
         status: "PLAYING",
         board,
-        turn: 1, // Use player slot 1 / 2 instead of actual DB userId
+        turn: 1,
       },
       include: { players: true },
     })
+    
+    // Auto-create new lobby when game fills
+    try {
+      await prisma.game.create({
+        data: { name: `Game ${Date.now()}`, status: "WAITING" }
+      })
+      console.log('Auto-created new lobby')
+    } catch (err) {
+      console.error('Failed to auto-create lobby:', err)
+    }
   }
 
   res.json({ player, game: updatedGame })
@@ -89,10 +99,10 @@ export const getGames = async (_req: Request, res: Response) => {
 }
 
 export const startGame = async (req: Request, res: Response) => {
-  const { gameId } = req.params
+  const gameId = Array.isArray(req.params.gameId) ? req.params.gameId[0] : req.params.gameId
 
   const game = await prisma.game.findUnique({
-    where: { id: Number(gameId) }
+    where: { id: gameId }
   })
 
   if (!game || game.status !== "WAITING") {
@@ -100,7 +110,7 @@ export const startGame = async (req: Request, res: Response) => {
   }
 
   const players = await prisma.gamePlayer.findMany({
-    where: { gameId: Number(gameId) },
+    where: { gameId },
     orderBy: { id: 'asc' }
   })
 
@@ -111,7 +121,7 @@ export const startGame = async (req: Request, res: Response) => {
   const board = createInitialBoard()
 
   const updated = await prisma.game.update({
-    where: { id: Number(gameId) },
+    where: { id: gameId },
     data: {
       status: "PLAYING",
       board,

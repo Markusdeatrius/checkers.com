@@ -3,7 +3,7 @@ import { SignJWT, jwtVerify } from "jose"
 const JWT_SECRET = new TextEncoder().encode("supersecret")
 
 export const signJWT = async (
-  payload: { userId: number },
+  payload: { userId: string },
   expiresIn = "1h"
 ) => {
   return await new SignJWT(payload)
@@ -14,5 +14,5 @@ export const signJWT = async (
 
 export const verifyJWT = async (token: string) => {
   const { payload } = await jwtVerify(token, JWT_SECRET)
-  return payload as { userId: number }
+  return payload as { userId: string }
 }

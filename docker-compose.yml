@@ -24,7 +24,6 @@ services:
         condition: service_healthy
     restart: always
 
-
   checkers_frontend:
     build:
       context: ./app/web
@@ -34,7 +33,7 @@ services:
 
   checkers_gateway:
     build:
-      context: ./Caddy
+      context: ./app/caddy
     restart: always
     ports:
       - "80:80"
@@ -46,19 +45,6 @@ services:
       - checkers_frontend
       - checkers_backend
 
-  portainer:
-    image: portainer/portainer-ce:lts
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data
-    ports:
-      - "9443:9443"
-      - "8000:8000"
-
-networks:
-  default:
-    name: portainer_network
 
 volumes:
   db_data:

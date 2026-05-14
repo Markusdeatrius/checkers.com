@@ -1,12 +1,18 @@
-FROM node:25
+FROM node:25-slim AS builder
 
 WORKDIR /app
-
 COPY package.json package-lock.json ./
-RUN npm install
-
+RUN npm ci --prefer-offline --no-audit --progress=false
 COPY . .
+RUN npm run build
 
-EXPOSE 8081
+FROM node:25-slim
+WORKDIR /app
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=3000
+COPY --from=builder /app/.output ./.output
 
-CMD ["node", "frontend-server.js"]
+EXPOSE 3000
+
+CMD ["node", ".output/server/index.mjs"]

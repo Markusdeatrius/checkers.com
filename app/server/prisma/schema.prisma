@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -8,31 +9,47 @@ datasource db {
 }
 
 model User {
-  id       Int          @id @default(autoincrement())
-  name     String
-  email    String       @unique
-  password String
-  games    GamePlayer[]
+  id            String       @id @default(uuid())
+  name          String
+  email         String       @unique
+  password      String
+  eloRating     Int          @default(1200)
+  gamesPlayed   Int          @default(0)
+  games         GamePlayer[]
+  winsAsPlayer1 Match[]      @relation("Player1")
+  winsAsPlayer2 Match[]      @relation("Player2")
 }
 
 model Game {
-  id        Int          @id @default(autoincrement())
+  id        String       @id @default(uuid()) 
   name      String
   status    String       @default("WAITING")
   turn      Int?
   board     Json?
-  winnerId  Int?
+  winnerId  String?      
   createdAt DateTime     @default(now())
   updatedAt DateTime     @default(now()) @updatedAt
   players   GamePlayer[]
 }
 
 model GamePlayer {
-  id      Int   @id @default(autoincrement())
-  userId  Int
-  gameId  Int
-  user    User  @relation(fields: [userId], references: [id])
-  game    Game  @relation(fields: [gameId], references: [id])
+  id      String @id @default(uuid())
+  userId  String 
+  gameId  String 
+  user    User   @relation(fields: [userId], references: [id])
+  game    Game   @relation(fields: [gameId], references: [id])
 
   @@unique([userId, gameId], name: "user_game_unique")
+}
+
+model Match {
+  id               String   @id @default(uuid())
+  player1Id        String
+  player2Id        String
+  isDraw           Boolean
+  eloChangePlayer1 Int
+  eloChangePlayer2 Int
+  createdAt        DateTime @default(now())
+  player1          User     @relation("Player1", fields: [player1Id], references: [id])
+  player2          User     @relation("Player2", fields: [player2Id], references: [id])
 }

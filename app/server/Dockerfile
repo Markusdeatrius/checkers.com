@@ -1,16 +1,23 @@
-FROM node:25-slim
-
+FROM node:25-slim AS builder
+RUN apt-get update -y && apt-get install -y openssl
 WORKDIR /app
-
 COPY package.json package-lock.json ./
-RUN npm ci --prefer-offline --no-audit --progress=false
-
+RUN npm ci
 COPY . .
-
-# build TypeScript
+# VYGENEROVÁNÍ KLIENTA PRO DEBIAN (podle schema.prisma)
+RUN npx prisma generate
 RUN npm run build
 
-EXPOSE 5050
+FROM node:25-slim AS runner
+RUN apt-get update -y && apt-get install -y openssl
+WORKDIR /app
+ENV NODE_ENV=production
 
-# použít start.sh, který generuje Prisma klienta při startu
-CMD ["sh", "./start.sh"]
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+
+EXPOSE 3002
+
+CMD npx prisma migrate deploy && node dist/server.js

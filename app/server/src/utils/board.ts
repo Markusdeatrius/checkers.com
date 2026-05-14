@@ -1,13 +1,17 @@
 export const createInitialBoard = (): number[][] => {
-  const board: number[][] = Array(8).fill(null).map(() => Array(8).fill(0));
+  const board: number[][] = Array.from({ length: 8 }, () => Array(8).fill(0));
 
-  for (let row = 0; row < 3; row++)
-    for (let col = 0; col < 8; col++)
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 8; col++) {
       if ((row + col) % 2 === 1) board[row][col] = 2;
+    }
+  }
 
-  for (let row = 5; row < 8; row++)
-    for (let col = 0; col < 8; col++)
+  for (let row = 5; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
       if ((row + col) % 2 === 1) board[row][col] = 1;
+    }
+  }
 
   return board;
 };
@@ -19,78 +23,233 @@ export type Move = {
   isKing?: boolean;
 };
 
+const inBounds = (x: number, y: number) => x >= 0 && x < 8 && y >= 0 && y < 8;
+
+const getOwner = (piece: number) => {
+  if (piece === 1 || piece === 3) return 1;
+  if (piece === 2 || piece === 4) return 2;
+  return 0;
+};
+
+const isKingPiece = (piece: number) => Math.abs(piece) > 2;
+
+const forwardDir = (playerId: number) => (playerId === 1 ? -1 : 1);
+
+const isOpponentPiece = (piece: number, playerId: number) => {
+  const owner = getOwner(piece);
+  return owner !== 0 && owner !== playerId;
+};
+
+export const getCaptureMovesForPiece = (
+  board: number[][],
+  from: [number, number],
+  playerId: number
+): Array<{ to: [number, number]; captured: [number, number] }> => {
+  const [fx, fy] = from;
+  if (!inBounds(fx, fy)) return [];
+  const piece = board[fx][fy];
+  if (!piece || getOwner(piece) !== playerId) return [];
+
+  const moves: Array<{ to: [number, number]; captured: [number, number] }> = [];
+  const king = isKingPiece(piece);
+  const forward = forwardDir(playerId);
+  const directions: Array<[number, number]> = king
+    ? ([ [1, 1], [1, -1], [-1, 1], [-1, -1] ] as const)
+    : ([ [forward * 2, 2], [forward * 2, -2] ] as const);
+
+  if (!king) {
+    for (const [dx, dy] of directions) {
+      const mx = fx + dx / 2;
+      const my = fy + dy / 2;
+      const tx = fx + dx;
+      const ty = fy + dy;
+
+      if (!inBounds(mx, my) || !inBounds(tx, ty)) continue;
+      if (board[tx][ty] !== 0) continue;
+      if (isOpponentPiece(board[mx][my], playerId)) {
+        moves.push({ to: [tx, ty], captured: [mx, my] });
+      }
+    }
+
+    return moves;
+  }
+
+  for (const [dx, dy] of directions) {
+    let x = fx + dx;
+    let y = fy + dy;
+    let opponentFound: [number, number] | null = null;
+
+    while (inBounds(x, y)) {
+      const current = board[x][y];
+      if (current === 0) {
+        if (opponentFound) {
+          moves.push({ to: [x, y], captured: opponentFound });
+        }
+        x += dx;
+        y += dy;
+        continue;
+      }
+
+      if (isOpponentPiece(current, playerId) && !opponentFound) {
+        opponentFound = [x, y];
+        x += dx;
+        y += dy;
+        continue;
+      }
+
+      break;
+    }
+  }
+
+  return moves;
+};
+
+export const getAllCaptureMoves = (
+  board: number[][],
+  playerId: number
+): Array<{ from: [number, number]; to: [number, number]; captured: [number, number] }> => {
+  const moves: Array<{ from: [number, number]; to: [number, number]; captured: [number, number] }> = [];
+
+  for (let x = 0; x < 8; x++) {
+    for (let y = 0; y < 8; y++) {
+      if (getOwner(board[x][y]) !== playerId) continue;
+      const captures = getCaptureMovesForPiece(board, [x, y], playerId);
+      for (const move of captures) {
+        moves.push({ from: [x, y], to: move.to, captured: move.captured });
+      }
+    }
+  }
+
+  return moves;
+};
+
+export const hasAnyCapture = (board: number[][], playerId: number): boolean => {
+  return getAllCaptureMoves(board, playerId).length > 0;
+};
+
+// NOVÁ FUNKCE: Pro vygenerování běžných (neskákacích) tahů pro frontend.
+// Dáma (king) nyní správně projde celou diagonálu jako střelec v šachách.
+export const getNormalMovesForPiece = (
+  board: number[][],
+  from: [number, number],
+  playerId: number
+): Array<{ to: [number, number] }> => {
+  const [fx, fy] = from;
+  if (!inBounds(fx, fy)) return [];
+  const piece = board[fx][fy];
+  if (!piece || getOwner(piece) !== playerId) return [];
+
+  const moves: Array<{ to: [number, number] }> = [];
+  const king = isKingPiece(piece);
+  const forward = forwardDir(playerId);
+  const directions: Array<[number, number]> = king
+    ? [[1, 1], [1, -1], [-1, 1], [-1, -1]]
+    : [[forward, 1], [forward, -1]];
+
+  if (king) {
+    for (const [dx, dy] of directions) {
+      let x = fx + dx;
+      let y = fy + dy;
+      while (inBounds(x, y)) {
+        if (board[x][y] === 0) {
+          moves.push({ to: [x, y] });
+          x += dx;
+          y += dy;
+        } else {
+          break; // Zablokováno jinou figurkou
+        }
+      }
+    }
+  } else {
+    for (const [dx, dy] of directions) {
+      const x = fx + dx;
+      const y = fy + dy;
+      if (inBounds(x, y) && board[x][y] === 0) {
+        moves.push({ to: [x, y] });
+      }
+    }
+  }
+
+  return moves;
+};
+
 export const validateMove = (
   board: number[][],
   move: Move,
   playerId: number
-): { valid: boolean; captured?: [number, number][]; mustJump: boolean } => {
+): { valid: boolean; captured?: [number, number][]; huffed?: [number, number][]; mustJump: boolean } => {
   const [fx, fy] = move.from;
   const [tx, ty] = move.to;
-  const piece = board[fx][fy];
-  if (!piece || Math.abs(piece) !== playerId && Math.abs(piece) <= 2) return { valid: false, mustJump: false };
+  if (!inBounds(fx, fy) || !inBounds(tx, ty)) return { valid: false, mustJump: false };
 
+  const piece = board[fx][fy];
+  if (!piece || getOwner(piece) !== playerId) return { valid: false, mustJump: false };
+  if (board[tx][ty] !== 0) return { valid: false, mustJump: false };
+
+  const king = move.isKing ?? isKingPiece(piece);
   const dx = tx - fx;
   const dy = ty - fy;
-  const opponent = playerId === 1 ? 2 : 1;
-  const captures: [number, number][] = [];
-  let mustJump = false;
+  if (Math.abs(dx) !== Math.abs(dy) || dx === 0) return { valid: false, mustJump: false };
 
-  // Najdi všechny povinné skoky na desce
-  for (let x = 0; x < 8; x++) {
-    for (let y = 0; y < 8; y++) {
-      if (Math.abs(board[x][y]) === playerId) {
-        const dirs = [[2, 2], [2, -2], [-2, 2], [-2, -2]];
-        for (const [dxDir, dyDir] of dirs) {
-          const nx = x + dxDir;
-          const ny = y + dyDir;
-          const mx = x + dxDir / 2;
-          const my = y + dyDir / 2;
-          if (
-            nx >= 0 &&
-            nx < 8 &&
-            ny >= 0 &&
-            ny < 8 &&
-            board[nx][ny] === 0 &&
-            (Math.abs(board[mx][my]) === opponent || Math.abs(board[mx][my]) === opponent + 2)
-          ) {
-            mustJump = true;
-          }
-        }
+  const captureMoves = getAllCaptureMoves(board, playerId);
+  const mustJump = captureMoves.length > 0;
+  const huffed: [number, number][] = [];
+  if (mustJump) {
+    const seen = new Set<string>();
+    for (const capture of captureMoves) {
+      const key = `${capture.from[0]}_${capture.from[1]}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        huffed.push(capture.from);
       }
     }
   }
 
-  // Tah pro královnu
-  if (move.isKing || Math.abs(piece) > 2) {
-    const steps = Math.abs(dx);
-    if (Math.abs(dx) !== Math.abs(dy)) return { valid: false, mustJump };
+  const forward = forwardDir(playerId);
+
+  if (king) {
     let capturedPiece: [number, number] | null = null;
-    const stepX = dx / steps;
-    const stepY = dy / steps;
-    for (let i = 1; i <= steps; i++) {
-      const cx = fx + stepX * i;
-      const cy = fy + stepY * i;
-      const current = board[cx][cy];
-      if (current !== 0) {
-        if (Math.abs(current) === playerId) return { valid: false, mustJump };
-        if (capturedPiece) return { valid: false, mustJump }; // více soupeřů na cestě
-        capturedPiece = [cx, cy];
+    let x = fx + Math.sign(dx);
+    let y = fy + Math.sign(dy);
+
+    while (x !== tx && y !== ty) {
+      const current = board[x][y];
+      if (current === 0) {
+        x += Math.sign(dx);
+        y += Math.sign(dy);
+        continue;
       }
+
+      if (isOpponentPiece(current, playerId) && !capturedPiece) {
+        capturedPiece = [x, y];
+        x += Math.sign(dx);
+        y += Math.sign(dy);
+        continue;
+      }
+
+      return { valid: false, mustJump };
     }
-    if (capturedPiece) captures.push(capturedPiece);
-    return { valid: true, captured: captures, mustJump };
+
+    if (capturedPiece) {
+      return { valid: true, captured: [capturedPiece], mustJump };
+    }
+
+    return { valid: true, huffed: mustJump ? huffed : undefined, mustJump };
   }
 
-  // Jednoduchý tah
-  if (Math.abs(dx) === 1 && Math.abs(dy) === 1 && !mustJump) return { valid: true, mustJump };
+  const absDx = Math.abs(dx);
+  if (absDx === 1 && Math.abs(dy) === 1) {
+    if (dx !== forward) return { valid: false, mustJump };
+    return { valid: true, huffed: mustJump ? huffed : undefined, mustJump };
+  }
 
-  // Skok přes soupeře
-  if (Math.abs(dx) === 2 && Math.abs(dy) === 2) {
-    const mx = fx + dx / 2;
-    const my = fy + dy / 2;
-    if (Math.abs(board[mx][my]) === opponent || Math.abs(board[mx][my]) === opponent + 2) {
-      captures.push([mx, my]);
-      return { valid: true, captured: captures, mustJump };
+  if (absDx === 2 && Math.abs(dy) === 2) {
+    if (dx !== forward * 2) return { valid: false, mustJump };
+    const mx = fx + Math.sign(dx);
+    const my = fy + Math.sign(dy);
+    if (!inBounds(mx, my)) return { valid: false, mustJump };
+    if (isOpponentPiece(board[mx][my], playerId)) {
+      return { valid: true, captured: [[mx, my]], mustJump };
     }
   }
 
@@ -101,7 +260,8 @@ export const applyMove = (
   board: number[][],
   from: [number, number],
   to: [number, number],
-  captured?: [number, number][]
+  captured?: [number, number][],
+  huffed?: [number, number][]
 ): number[][] => {
   const newBoard = board.map((row) => [...row]);
   const [fx, fy] = from;
@@ -111,12 +271,28 @@ export const applyMove = (
   newBoard[tx][ty] = piece;
 
   if (captured) {
-    captured.forEach(([x, y]) => (newBoard[x][y] = 0));
+    captured.forEach(([x, y]) => {
+      if (inBounds(x, y)) newBoard[x][y] = 0;
+    });
   }
 
-  // Promotion na královnu
-  if (piece === 1 && tx === 0) newBoard[tx][ty] = 3;
-  if (piece === 2 && tx === 7) newBoard[tx][ty] = 4;
+  let movedPieceHuffed = false;
+  if (huffed) {
+    for (const [x, y] of huffed) {
+      if (!inBounds(x, y)) continue;
+      if (x === fx && y === fy) {
+        movedPieceHuffed = true;
+      }
+      newBoard[x][y] = 0;
+    }
+  }
+
+  if (movedPieceHuffed) {
+    newBoard[tx][ty] = 0;
+  } else {
+    if (piece === 1 && tx === 0) newBoard[tx][ty] = 3;
+    if (piece === 2 && tx === 7) newBoard[tx][ty] = 4;
+  }
 
   return newBoard;
 };
@@ -124,10 +300,7 @@ export const applyMove = (
 export const hasPiecesLeft = (board: number[][], playerId: number): boolean => {
   for (const row of board) {
     for (const cell of row) {
-      if (
-        cell === playerId ||
-        cell === playerId + 2
-      ) {
+      if (cell === playerId || cell === playerId + 2) {
         return true;
       }
     }
@@ -140,60 +313,65 @@ export const hasValidMoves = (
   board: number[][],
   playerId: number
 ): boolean => {
-  for (let x = 0; x < 8; x++) {
-    for (let y = 0; y < 8; y++) {
-      const piece = board[x][y];
+  const ownerPieces = board.flatMap((row, x) =>
+    row
+      .map((cell, y) => ({ cell, x, y }))
+      .filter(({ cell }) => getOwner(cell) === playerId)
+  );
 
-      if (
-        piece !== playerId &&
-        piece !== playerId + 2
-      ) {
-        continue;
+  for (const { cell, x, y } of ownerPieces) {
+    const king = isKingPiece(cell);
+    const simpleDirections: Array<[number, number]> = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+    const forward = forwardDir(playerId);
+
+    for (const [dx, dy] of simpleDirections) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (inBounds(nx, ny)) {
+        if (board[nx][ny] === 0) {
+          if (king || dx === forward) return true;
+        }
       }
 
-      const directions = [
-        [-1, -1],
-        [-1, 1],
-        [1, -1],
-        [1, 1],
-      ];
+      const jumpX = x + dx * 2;
+      const jumpY = y + dy * 2;
+      if (!inBounds(jumpX, jumpY)) continue;
+      const enemyX = x + dx;
+      const enemyY = y + dy;
+      if (!inBounds(enemyX, enemyY)) continue;
 
-      for (const [dx, dy] of directions) {
-        const nx = x + dx;
-        const ny = y + dy;
+      if (
+        board[jumpX][jumpY] === 0 &&
+        isOpponentPiece(board[enemyX][enemyY], playerId) &&
+        (king || dx === forward) // Opraveno z forward * 2
+      ) {
+        return true;
+      }
+    }
 
-        if (
-          nx >= 0 &&
-          nx < 8 &&
-          ny >= 0 &&
-          ny < 8 &&
-          board[nx][ny] === 0
-        ) {
-          return true;
-        }
+    if (king) {
+      for (const [dx, dy] of simpleDirections) {
+        let nx = x + dx;
+        let ny = y + dy;
+        let opponentFound = false;
 
-        const jumpX = x + dx * 2;
-        const jumpY = y + dy * 2;
-        const enemyX = x + dx;
-        const enemyY = y + dy;
-        const enemyPlayer = playerId === 1 ? 2 : 1;
+        while (inBounds(nx, ny)) {
+          const current = board[nx][ny];
+          if (current === 0) {
+            if (opponentFound) return true;
+            nx += dx;
+            ny += dy;
+            continue;
+          }
 
-        if (
-          jumpX >= 0 &&
-          jumpX < 8 &&
-          jumpY >= 0 &&
-          jumpY < 8 &&
-          enemyX >= 0 &&
-          enemyX < 8 &&
-          enemyY >= 0 &&
-          enemyY < 8 &&
-          board[jumpX][jumpY] === 0 &&
-          (
-            board[enemyX][enemyY] === enemyPlayer ||
-            board[enemyX][enemyY] === enemyPlayer + 2
-          )
-        ) {
-          return true;
+          if (!opponentFound && isOpponentPiece(current, playerId)) {
+            opponentFound = true;
+            nx += dx;
+            ny += dy;
+            continue;
+          }
+
+          break;
         }
       }
     }

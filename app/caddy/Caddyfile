@@ -1,7 +1,5 @@
 :80 {
-    reverse_proxy /api/* checkers_backend:5050
+    reverse_proxy /api/* checkers_backend:3002
 
-    reverse_proxy * checkers_frontend:8081
-
-    encode zstd gzip
+    reverse_proxy /* checkers_frontend:3000
 }

@@ -80,10 +80,10 @@ onMounted(async () => {
 })
 
 const getOpponentName = (match: any) => {
-  if (!match.players || match.players.length < 2) return 'M'
+  if (!match.players || match.players.length < 2) return 'Unknown'
   const isPlayer1 = String(match.players[0]?.userId || match.players[0]?.id) === String(user.value.id)
   const opponent = isPlayer1 ? match.players[1] : match.players[0]
-  return opponent?.name || 'M'
+  return opponent?.user?.name || 'Unknown'
 }
 
 // LOGIKA: Pokud backend neposílá eloChange, vypočítáme ho podle winnerId

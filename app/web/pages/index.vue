@@ -8,7 +8,7 @@ const authMode = ref<'login' | 'register'>('login')
 const authMessage = ref<string>('')
 const authError = ref<string>('')
 const playError = ref<string>('')
-const user = ref<{ id: string; name: string; email: string } | null>(null)
+const user = ref<{ id: string; name: string; email: string; eloRating?: number } | null>(null)
 const token = ref<string>('')
 const games = ref<any[]>([])
 const topPlayers = ref<Array<{ id: string; name: string; eloRating: number; rank: number }>>([])
@@ -25,6 +25,26 @@ const fetchLeaderboard = async () => {
     const response = await fetch('/api/matches/leaderboard')
     if (!response.ok) return
     topPlayers.value = await response.json()
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const fetchUserProfile = async () => {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return
+    const response = await fetch('/api/auth/me', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    if (!response.ok) return
+    const userData = await response.json()
+    user.value = userData
+    localStorage.setItem('user', JSON.stringify(userData))
   } catch (e) {
     console.error(e)
   }
@@ -70,6 +90,7 @@ onMounted(() => {
   const savedUser = localStorage.getItem('user')
   if (savedUser) {
     user.value = JSON.parse(savedUser)
+    fetchUserProfile()
   }
 })
 
@@ -104,7 +125,7 @@ const handleAuthSubmit = async (payload: { authMode: 'login' | 'register'; name:
     
     authMessage.value = payload.authMode === 'login' ? 'Logged in successfully' : `Registered ${user.value?.name}`
     view.value = 'play'
-    await fetchGames()
+    await Promise.all([fetchGames(), fetchUserProfile()])
   } catch (e) {
     authError.value = 'Server connection error'
   }
@@ -216,7 +237,6 @@ const logout = () => {
                 No games waiting. Use Quick Join to start!
               </div>
               <div v-else class="games-grid">
-                <!-- Dynamické číslování podle indexu v poli -->
                 <div v-for="(game, index) in waitingGames" :key="game.id" class="game-card">
                   <div class="game-card-header">
                     <span class="game-id">#{{ index + 1 }}</span>
@@ -254,8 +274,7 @@ const logout = () => {
             </div>
             <div v-else class="user-info-compact">
               <div class="user-brand">
-                <strong class="username">{{ user.name }}</strong>
-              </div>
+                <strong class="username">{{ user.name }}</strong>                <div class="user-elo">{{ user.eloRating}} ELO</div>              </div>
               <button class="btn-logout" @click="logout">Odhlásit se</button>
             </div>
             <div class="sidebar-actions">
@@ -263,9 +282,9 @@ const logout = () => {
                   <template v-if="view === 'home'">
                     <button class="btn-main" @click="goToPlay">Browse Matches</button>
                     <button class="btn-sub" @click="$router.push('/history')">📜 Match History</button>
+                    <button class="btn-sub" @click="$router.push('/leaderboard')">🏆 Leaderboard</button>
                   </template>
                 </template>
-
                 <template v-else>
                   <template v-if="view === 'home'">
                     <button class="btn-main" @click="view = 'auth'">Sign In / Register</button>
@@ -404,8 +423,8 @@ const logout = () => {
 
 .user-brand {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .user-avatar {
@@ -416,6 +435,13 @@ const logout = () => {
   color: #fff;
   font-weight: 600;
   font-size: 0.95rem;
+}
+
+.user-elo {
+  color: #81b64c;
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
 }
 
 .btn-logout {

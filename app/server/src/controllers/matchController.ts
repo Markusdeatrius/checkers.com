@@ -111,3 +111,127 @@ export const getLeaderboard = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch leaderboard" });
   }
 };
+
+export const getRankersLeaderboard = async (req: Request, res: Response) => {
+  try {
+    const players = await prisma.user.findMany({
+      orderBy: { eloRating: "desc" },
+      take: 50,
+    });
+
+    const leaderboard = players.map((player: any, index: number) => ({
+      rank: index + 1,
+      id: player.id,
+      name: player.name,
+      eloRating: player.eloRating || 1200,
+      gamesPlayed: player.gamesPlayed || 0,
+    }));
+
+    res.json(leaderboard);
+  } catch (error) {
+    console.error("Error fetching rankers:", error);
+    res.status(500).json({ error: "Failed to fetch rankers" });
+  }
+};
+
+export const getWinnersLeaderboard = async (req: Request, res: Response) => {
+  try {
+    const users = await prisma.user.findMany();
+
+    const playerStats = await Promise.all(
+      users.map(async (user: any) => {
+        const wins = await prisma.match.count({
+          where: {
+            OR: [
+              { player1Id: user.id, isDraw: false, eloChangePlayer1: { gt: 0 } },
+              { player2Id: user.id, isDraw: false, eloChangePlayer2: { gt: 0 } },
+            ],
+          },
+        });
+
+        const losses = await prisma.match.count({
+          where: {
+            OR: [
+              { player1Id: user.id, isDraw: false, eloChangePlayer1: { lt: 0 } },
+              { player2Id: user.id, isDraw: false, eloChangePlayer2: { lt: 0 } },
+            ],
+          },
+        });
+
+        return {
+          id: user.id,
+          name: user.name,
+          eloRating: user.eloRating || 1200,
+          gamesPlayed: user.gamesPlayed || 0,
+          wins,
+          losses,
+          net: wins - losses,
+        };
+      })
+    );
+
+    const sorted = playerStats
+      .sort((a, b) => b.net - a.net)
+      .slice(0, 50)
+      .map((player: any, index: number) => ({
+        rank: index + 1,
+        ...player,
+      }));
+
+    res.json(sorted);
+  } catch (error) {
+    console.error("Error fetching winners:", error);
+    res.status(500).json({ error: "Failed to fetch winners" });
+  }
+};
+
+export const getWallOfShameLeaderboard = async (req: Request, res: Response) => {
+  try {
+    const users = await prisma.user.findMany();
+
+    const playerStats = await Promise.all(
+      users.map(async (user: any) => {
+        const wins = await prisma.match.count({
+          where: {
+            OR: [
+              { player1Id: user.id, isDraw: false, eloChangePlayer1: { gt: 0 } },
+              { player2Id: user.id, isDraw: false, eloChangePlayer2: { gt: 0 } },
+            ],
+          },
+        });
+
+        const losses = await prisma.match.count({
+          where: {
+            OR: [
+              { player1Id: user.id, isDraw: false, eloChangePlayer1: { lt: 0 } },
+              { player2Id: user.id, isDraw: false, eloChangePlayer2: { lt: 0 } },
+            ],
+          },
+        });
+
+        return {
+          id: user.id,
+          name: user.name,
+          eloRating: user.eloRating || 1200,
+          gamesPlayed: user.gamesPlayed || 0,
+          wins,
+          losses,
+          net: wins - losses,
+        };
+      })
+    );
+
+    const sorted = playerStats
+      .sort((a, b) => b.losses - a.losses)
+      .slice(0, 50)
+      .map((player: any, index: number) => ({
+        rank: index + 1,
+        ...player,
+      }));
+
+    res.json(sorted);
+  } catch (error) {
+    console.error("Error fetching wall of shame:", error);
+    res.status(500).json({ error: "Failed to fetch wall of shame" });
+  }
+};

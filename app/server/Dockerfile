@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-# VYGENEROVÁNÍ KLIENTA PRO DEBIAN (podle schema.prisma)
+
 RUN npx prisma generate
 RUN npm run build
 

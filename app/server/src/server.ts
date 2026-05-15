@@ -4,16 +4,26 @@ import app from './app';
 import { setupGameSocket } from './sockets/gameSocket';
 import prisma from './libs/prisma';
 
+const TARGET_WAITING_LOBBIES = 9;
+
 const ensureLobbies = async () => {
   try {
-    const waitingCount = await prisma.game.count({
-      where: { status: 'WAITING' }
-    }) - 1;
-    
+    const waitingGames = await prisma.game.findMany({
+      where: { status: 'WAITING' },
+      orderBy: { createdAt: 'asc' },
+    });
+    const waitingCount = waitingGames.length;
+
     console.log(`Waiting lobbies: ${waitingCount}`)
-    
-    const needed = Math.max(0, 9 - waitingCount)
-    if (needed > 0) {
+
+    if (waitingCount > TARGET_WAITING_LOBBIES) {
+      const extraGames = waitingGames.slice(TARGET_WAITING_LOBBIES);
+      await prisma.game.deleteMany({
+        where: { id: { in: extraGames.map(game => game.id) } },
+      });
+      console.log(`Removed ${extraGames.length} extra lobbies. Now ${TARGET_WAITING_LOBBIES} waiting.`)
+    } else if (waitingCount < TARGET_WAITING_LOBBIES) {
+      const needed = TARGET_WAITING_LOBBIES - waitingCount;
       console.log(`Creating ${needed} new lobbies...`)
       for (let i = 0; i < needed; i++) {
         await prisma.game.create({

@@ -271,7 +271,11 @@ const formatDuration = (ms: number) => {
 }
 
 onMounted(() => {
-  socket = io('http://localhost:3002')
+  const socketUrl = import.meta.env.DEV ? 'http://localhost:3002' : ''
+  socket = io(socketUrl, {
+    path: '/socket.io',
+    transports: ['websocket', 'polling'],
+  })
 
   socket.on('gameState', (state: any) => {
     board.value = state.board

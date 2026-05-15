@@ -65,12 +65,20 @@ export const joinGame = async (req: Request, res: Response) => {
       include: { players: true },
     })
     
-    // Auto-create new lobby when game fills
+    // Auto-create new lobby when game fills, only if there are fewer than 9 waiting lobbies
     try {
-      await prisma.game.create({
-        data: { name: `Game ${Date.now()}`, status: "WAITING" }
-      })
-      console.log('Auto-created new lobby')
+      const waitingCount = await prisma.game.count({
+        where: { status: "WAITING" }
+      });
+
+      if (waitingCount < 9) {
+        await prisma.game.create({
+          data: { name: `Game ${Date.now()}`, status: "WAITING" }
+        })
+        console.log('Auto-created new lobby')
+      } else {
+        console.log('Skipped auto-create; maximum waiting lobbies reached')
+      }
     } catch (err) {
       console.error('Failed to auto-create lobby:', err)
     }

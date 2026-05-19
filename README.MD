@@ -94,19 +94,6 @@ npm run prisma:migrate
 npm run prisma:seed
 ```
 
-## Environment variables
-
-The repository includes a `.env` example with these values:
-
-```dotenv
-DB_NAME=checkers_db
-DB_USER=checkers
-DB_PASSWORD=checkers
-DATABASE_URL="postgresql://checkers:checkers@checkers_db:5432/checkers_db"
-```
-
-When running with Docker Compose, `checkers_backend` reads `.env` from the repository root.
-
 ## Folder overview
 
 - `app/caddy` — Caddy configuration and Dockerfile

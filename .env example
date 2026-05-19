@@ -1,6 +1,0 @@
-DB_NAME=checkers_db
-DB_USER=checkers
-DB_PASSWORD=checkers
-
-# Pro backend běžící v Dockeru:
-DATABASE_URL="postgresql://checkers:checkers@checkers_db:5432/checkers_db"

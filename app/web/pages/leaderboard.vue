@@ -133,6 +133,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
+const apiBase = useRuntimeConfig().public.NUXT_PUBLIC_API_BASE || ''
+
 interface Player {
   rank: number
   id: string
@@ -152,21 +154,21 @@ const loading = ref(false)
 
 const fetchRankers = async () => {
   try {
-    const res = await fetch('/api/matches/leaderboard/rankers')
+    const res = await fetch(`${apiBase}/api/matches/leaderboard/rankers`)
     rankers.value = await res.json()
   } catch (err) { console.error(err) }
 }
 
 const fetchWinners = async () => {
   try {
-    const res = await fetch('/api/matches/leaderboard/winners')
+    const res = await fetch(`${apiBase}/api/matches/leaderboard/winners`)
     winners.value = await res.json()
   } catch (err) { console.error(err) }
 }
 
 const fetchShame = async () => {
   try {
-    const res = await fetch('/api/matches/leaderboard/wall-of-shame')
+    const res = await fetch(`${apiBase}/api/matches/leaderboard/wall-of-shame`)
     shame.value = await res.json()
   } catch (err) { console.error(err) }
 }

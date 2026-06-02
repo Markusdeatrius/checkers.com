@@ -271,8 +271,8 @@ const formatDuration = (ms: number) => {
 }
 
 onMounted(() => {
-  const socketUrl = import.meta.env.DEV ? 'http://localhost:3002' : ''
-  socket = io(socketUrl, {
+  const socketBase = useRuntimeConfig().public.NUXT_PUBLIC_API_BASE || ''
+  socket = io(socketBase, {
     path: '/socket.io',
     transports: ['websocket', 'polling'],
   })

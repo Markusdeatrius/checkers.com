@@ -46,6 +46,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 
+const apiBase = useRuntimeConfig().public.NUXT_PUBLIC_API_BASE || ''
+
 const user = ref<any>(null)
 const allGames = ref<any[]>([])
 const loading = ref(true)
@@ -68,7 +70,7 @@ onMounted(async () => {
   user.value = JSON.parse(savedUser)
 
   try {
-    const response = await fetch('/api/games')
+    const response = await fetch(`${apiBase}/api/games`)
     if (response.ok) {
       allGames.value = await response.json()
     }

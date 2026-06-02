@@ -43,8 +43,16 @@ const ensureLobbies = async () => {
 
 const httpServer = createServer(app);
 
+// Mirror Express CORS configuration for socket.io. Use CORS_ORIGINS env var
+const rawOrigins = process.env.CORS_ORIGINS || ''
+let socketOrigins: string[] | '*' = '*'
+if (rawOrigins) {
+  if (rawOrigins.trim() === '*') socketOrigins = '*'
+  else socketOrigins = rawOrigins.split(',').map(s => s.trim()).filter(Boolean)
+}
+
 const io = new Server(httpServer, {
-  cors: { origin: '*' },
+  cors: { origin: socketOrigins, methods: ['GET', 'POST'], credentials: true },
 });
 
 setupGameSocket(io);

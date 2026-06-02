@@ -35,6 +35,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
+const apiBase = useRuntimeConfig().public.NUXT_PUBLIC_API_BASE || ''
+
 interface LeaderboardEntry {
   rank: number
   id: number
@@ -50,7 +52,7 @@ const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const response = await fetch('/api/matches/leaderboard')
+    const response = await fetch(`${apiBase}/api/matches/leaderboard`)
     if (!response.ok) throw new Error('Failed to fetch leaderboard')
     players.value = await response.json()
   } catch (error) {

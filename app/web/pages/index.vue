@@ -3,6 +3,8 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import LandingHero from '~/components/LandingHero.vue'
 import AuthPanel from '~/components/AuthPanel.vue'
 
+const apiBase = useRuntimeConfig().public.NUXT_PUBLIC_API_BASE || ''
+
 const view = ref<'home' | 'auth' | 'play'>('home')
 const authMode = ref<'login' | 'register'>('login')
 const authMessage = ref<string>('')
@@ -22,7 +24,7 @@ const waitingGames = computed(() => {
 
 const fetchLeaderboard = async () => {
   try {
-    const response = await fetch('/api/matches/leaderboard')
+    const response = await fetch(`${apiBase}/api/matches/leaderboard`)
     if (!response.ok) return
     topPlayers.value = await response.json()
   } catch (e) {
@@ -34,7 +36,7 @@ const fetchUserProfile = async () => {
   try {
     const token = localStorage.getItem('token')
     if (!token) return
-    const response = await fetch('/api/auth/me', {
+    const response = await fetch(`${apiBase}/api/auth/me`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -53,7 +55,7 @@ const fetchUserProfile = async () => {
 const fetchGames = async () => {
   playError.value = ''
   try {
-    const response = await fetch('/api/games')
+    const response = await fetch(`${apiBase}/api/games`)
     if (!response.ok) {
       playError.value = `Load failed: ${response.status}`
       games.value = []
@@ -101,7 +103,7 @@ onUnmounted(() => {
 const handleAuthSubmit = async (payload: { authMode: 'login' | 'register'; name: string; email: string; password: string }) => {
   authError.value = ''
   authMessage.value = ''
-  const endpoint = payload.authMode === 'login' ? '/api/auth/login' : '/api/auth/register'
+  const endpoint = payload.authMode === 'login' ? `${apiBase}/api/auth/login` : `${apiBase}/api/auth/register`
   const body = payload.authMode === 'login'
     ? { email: payload.email, password: payload.password }
     : { name: payload.name, email: payload.email, password: payload.password }
@@ -138,7 +140,7 @@ const playGame = async () => {
     let gameId: string
     if (waitingGames.value.length > 0) {
       gameId = waitingGames.value[0].id
-      const joinResponse = await fetch(`/api/games/${gameId}/join`, {
+      const joinResponse = await fetch(`${apiBase}/api/games/${gameId}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.value.id }),
@@ -148,14 +150,14 @@ const playGame = async () => {
         return
       }
     } else {
-      const createResponse = await fetch('/api/games', {
+      const createResponse = await fetch(`${apiBase}/api/games`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: 'Checkers match' }),
       })
       const newGame = await createResponse.json()
       gameId = newGame.id
-      await fetch(`/api/games/${gameId}/join`, {
+      await fetch(`${apiBase}/api/games/${gameId}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.value.id }),
@@ -171,7 +173,7 @@ const playGame = async () => {
 const joinSpecificGame = async (gameId: string) => {
   if (!user.value) { playError.value = 'Please log in first.'; return; }
   try {
-    const response = await fetch(`/api/games/${gameId}/join`, {
+    const response = await fetch(`${apiBase}/api/games/${gameId}/join`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.value.id }),

@@ -19,6 +19,7 @@ services:
       context: ./app/server
     env_file:
       - .env
+    command: sh -c "npx prisma migrate deploy && node dist/server.js"
     depends_on:
       checkers_db:
         condition: service_healthy
@@ -50,4 +51,3 @@ volumes:
   db_data:
   caddy_data:
   caddy_config:
-  portainer_data:

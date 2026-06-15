@@ -5,4 +5,4 @@ DB_PASSWORD=checkers
 # Pro backend běžící v Dockeru:
 # V adresáři ./app/server/
 # Založte .env s:
-DATABASE_URL="postgresql://checkers:checkers@checkers_db:5432/checkers_db"
+DATABASE_URL=postgresql://checkers:checkers@checkers_db:5432/checkers_db

@@ -17,6 +17,8 @@ services:
   checkers_backend:
     build:
       context: ./app/server
+      args:
+        DATABASE_URL: ${DATABASE_URL}
     env_file:
       - .env
     command: sh -c "npx prisma migrate deploy && node dist/server.js"
